@@ -1,0 +1,128 @@
+<!-- templates/login.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="form-container">
+    <div class="card">
+        <div class="card-header text-center">
+            <h2 class="h4 mb-0">Login with Phone</h2>
+        </div>
+        <div class="card-body">
+            <div id="firebaseui-auth-container"></div>
+            <div id="loader" class="text-center my-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Setting up secure login...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Firebase App (the core Firebase SDK) -->
+<script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+
+<!-- Firebase Auth -->
+<script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+
+<!-- FirebaseUI -->
+<link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.css" />
+<script src="https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.js"></script>
+
+<script>
+    // Your Firebase configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyA4sOXJCedfA7ugRT6OAylgr0YNmj9JqVI",
+        authDomain: "voting-app-aei.firebaseapp.com",
+        projectId: "voting-app-aei",
+        storageBucket: "voting-app-aei.firebasestorage.app",
+        messagingSenderId: "285948156252",
+        appId: "1:285948156252:web:dffd67dcb089499ee08999",
+        measurementId: "G-8GHW9FP8Q3"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+
+    // Initialize the FirebaseUI Widget using Firebase
+    const ui = new firebaseui.auth.AuthUI(firebase.auth());
+    
+    // Hide loader when UI is rendered
+    ui.disableAutoSignIn();
+
+    // Configure FirebaseUI
+    const uiConfig = {
+        // Will use popup for IDP Providers sign-in flow instead of the default redirect
+        signInFlow: 'popup',
+        signInOptions: [
+            {
+                provider: firebase.auth.PhoneAuthProvider.PROVIDER_ID,
+                recaptchaParameters: {
+                    type: 'image', // Use 'image' captcha
+                    size: 'normal', // Can be 'normal' or 'invisible'
+                    badge: 'bottomleft' // Can be 'bottomright', 'bottomleft', 'inline'
+                },
+                defaultCountry: 'IN', // Set default country to US (change as needed)
+                whitelistedCountries: ['IN'] // Allowed countries (customize as needed)
+            }
+        ],
+        callbacks: {
+            signInSuccessWithAuthResult: function(authResult, redirectUrl) {
+                // Get the user's ID token
+                authResult.user.getIdToken().then(idToken => {
+                    // Send the token to your backend
+                    fetch('/verify_token', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ idToken })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Redirect to the candidates page
+                            window.location.href = data.redirect;
+                        } else {
+                            // Show error message
+                            alert('Authentication failed: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred during authentication.');
+                    });
+                });
+                // Return false to avoid redirect by FirebaseUI
+                return false;
+            }
+        },
+        // Terms of service url
+        tosUrl: '#',
+        // Privacy policy url
+        privacyPolicyUrl: '#'
+    };
+
+    // Initialize UI and hide loader when rendered
+    ui.start('#firebaseui-auth-container', uiConfig);
+    
+    // Hide loader once the Firebase UI is rendered
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if FirebaseUI has rendered periodically
+        const checkUIRendered = setInterval(function() {
+            const authContainer = document.querySelector('#firebaseui-auth-container .firebaseui-container');
+            if (authContainer) {
+                // UI has been rendered, hide the loader
+                document.getElementById('loader').style.display = 'none';
+                clearInterval(checkUIRendered);
+            }
+        }, 100);
+        
+        // Fallback - hide loader after 3 seconds even if we can't detect UI render
+        setTimeout(function() {
+            document.getElementById('loader').style.display = 'none';
+            clearInterval(checkUIRendered);
+        }, 3000);
+    });
+</script>
+{% endblock %}

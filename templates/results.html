@@ -1,0 +1,35 @@
+<!-- templates/results.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="text-center mb-4">Voting Results</h2>
+        <p class="text-center">Total votes: {{ total_votes }}</p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        {% for candidate in candidates %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h3 class="h5">{{ candidate.name }}</h3>
+                <div class="d-flex justify-content-between mb-1">
+                    <span>{{ candidate.votes }} vote{% if candidate.votes != 1 %}s{% endif %}</span>
+                    <span>{{ "%.1f"|format(candidate.votes / total_votes * 100 if total_votes else 0) }}%</span>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar" role="progressbar" style="width: {{ candidate.votes / total_votes * 100 if total_votes else 0 }}%" 
+                        aria-valuenow="{{ candidate.votes }}" aria-valuemin="0" aria-valuemax="{{ total_votes }}"></div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="text-center mt-4">
+    <a href="{{ url_for('candidates') }}" class="btn btn-outline-primary">Back to Candidates</a>
+</div>
+{% endblock %}

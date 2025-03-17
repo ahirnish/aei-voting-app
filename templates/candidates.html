@@ -1,0 +1,60 @@
+<!-- templates/candidates.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="text-center mb-4">Cast Your Vote</h2>
+        
+        {% if has_voted %}
+            <div class="alert alert-info text-center">
+                You have already voted. Your selection is highlighted below.
+            </div>
+        {% elif not voting_open %}
+            <div class="alert alert-warning text-center">
+                <h4>Voting is currently closed</h4>
+                <p>
+                    Voting window: {{ start_time }} to {{ end_time }}<br>
+                    Please return during the scheduled voting period.
+                </p>
+            </div>
+        {% else %}
+            <div class="alert alert-success text-center">
+                <strong>Voting is open!</strong> Please select a candidate to vote for.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    {% for candidate in candidates %}
+    <div class="col">
+        <div class="card h-100 position-relative {% if selected_candidate == candidate.id %}selected-vote{% endif %}">
+            {% if selected_candidate == candidate.id %}
+            <div class="voted-badge">
+                <i class="bi bi-check"></i> ✓
+            </div>
+            {% endif %}
+            <div class="card-header text-center">
+                <h3 class="h5 mb-0">{{ candidate.name }}</h3>
+            </div>
+            <div class="card-body">
+                <p class="card-text">{{ candidate.info }}</p>
+                {% if not has_voted and voting_open %}
+                <form action="{{ url_for('vote', candidate_id=candidate.id) }}" method="post">
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Vote</button>
+                    </div>
+                </form>
+                {% elif not has_voted %}
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-secondary" disabled>Voting Closed</button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

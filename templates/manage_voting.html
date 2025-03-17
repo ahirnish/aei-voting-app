@@ -1,0 +1,99 @@
+<!-- templates/manage_voting.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>Manage Voting Time Window</h2>
+            <div>
+                <a href="{{ url_for('check_voting_status') }}" class="btn btn-primary">Back to Dashboard</a>
+            </div>
+        </div>
+        <p class="text-muted">Set the time period when voting is allowed</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="h5 mb-0">Voting Window Settings</h3>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('update_voting_window') }}" method="post">
+                    <div class="mb-3 form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if voting_window.is_active %}checked{% endif %}>
+                        <label class="form-check-label" for="is_active">
+                            Voting is {% if voting_window.is_active %}Open{% else %}Closed{% endif %}
+                        </label>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="start_time" class="form-label">Voting Start Time</label>
+                        <input type="datetime-local" class="form-control" id="start_time" name="start_time" value="{{ start_time }}">
+                        <small class="text-muted">When voting will open. Leave blank to use manual activation only.</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="end_time" class="form-label">Voting End Time</label>
+                        <input type="datetime-local" class="form-control" id="end_time" name="end_time" value="{{ end_time }}">
+                        <small class="text-muted">When voting will close. Leave blank to use manual deactivation only.</small>
+                    </div>
+                    
+                    <div class="alert {% if voting_window.is_open() %}alert-success{% else %}alert-warning{% endif %} mb-4">
+                        {% if voting_window.is_open() %}
+                            <strong>Voting is currently OPEN</strong>
+                            {% if voting_window.end_time %}
+                                <p class="mb-0">Voting will automatically close at {{ voting_window.end_time.strftime("%b %d, %Y at %I:%M %p") }}</p>
+                            {% else %}
+                                <p class="mb-0">No automatic end time set. You will need to close voting manually.</p>
+                            {% endif %}
+                        {% else %}
+                            <strong>Voting is currently CLOSED</strong>
+                            {% if voting_window.start_time and voting_window.is_active %}
+                                {% if voting_window.start_time > now %}
+                                    <p class="mb-0">Voting will automatically open at {{ voting_window.start_time.strftime("%b %d, %Y at %I:%M %p") }}</p>
+                                {% else %}
+                                    <p class="mb-0">Start time has passed but voting is closed. Check the "Voting is Open" switch to enable voting.</p>
+                                {% endif %}
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Save Settings</button>
+                    </div>
+                </form>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{{ url_for('open_voting') }}" class="btn btn-success">Open Voting Now</a>
+                    <a href="{{ url_for('close_voting') }}" class="btn btn-danger">Close Voting Now</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="h5 mb-0">How Voting Window Works</h3>
+            </div>
+            <div class="card-body">
+                <ul>
+                    <li><strong>Manual Control:</strong> Use the "Open Voting Now" and "Close Voting Now" buttons for immediate control.</li>
+                    <li><strong>Scheduled Window:</strong> Set start and end times for automatic opening and closing.</li>
+                    <li><strong>Combined Control:</strong> You can use both methods together. The voting will be open when:
+                        <ul>
+                            <li>The "Voting is Open" switch is ON, AND</li>
+                            <li>The current time is between start and end times (if set)</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

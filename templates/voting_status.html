@@ -1,0 +1,97 @@
+<!-- templates/voting_status.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>Voting Status Dashboard</h2>
+            <div>
+                <a href="{{ url_for('manage_voting') }}" class="btn btn-success me-2">Manage Voting Time</a>
+                <a href="{{ url_for('results') }}" class="btn btn-primary me-2">See Results</a>
+                <a href="{{ url_for('admin_logout') }}" class="btn btn-outline-secondary">Logout</a>
+            </div>
+        </div>
+        <p class="text-muted">Admin view of current voting status</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h3 class="h5 mb-0">Participation Stats</h3>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h4 class="h6">Total Registered Users</h4>
+                    <p class="display-6">{{ total_users }}</p>
+                </div>
+                <div class="mb-3">
+                    <h4 class="h6">Users Who Voted</h4>
+                    <p class="text-success display-6">{{ voted_users }}</p>
+                </div>
+                <div class="mb-3">
+                    <h4 class="h6">Users Yet to Vote</h4>
+                    <p class="text-danger display-6">{{ pending_users }}</p>
+                </div>
+                
+                <div class="alert {% if voting_window.is_open() %}alert-success{% else %}alert-warning{% endif %} mt-4">
+                    <strong>Voting Status: {% if voting_window.is_open() %}OPEN{% else %}CLOSED{% endif %}</strong>
+                    <a href="{{ url_for('manage_voting') }}" class="btn btn-sm btn-outline-dark mt-2">Manage</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card h-100">
+            <div class="card-header">
+                <h3 class="h5 mb-0">Voting Progress</h3>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <h4 class="h6">Overall Participation Rate</h4>
+                    <div class="progress" style="height: 30px;">
+                        <div class="progress-bar" role="progressbar" 
+                            style="width: {{ vote_percentage }}%;" 
+                            aria-valuenow="{{ vote_percentage }}" 
+                            aria-valuemin="0" 
+                            aria-valuemax="100">
+                            {{ "%.1f"|format(vote_percentage) }}%
+                        </div>
+                    </div>
+                </div>
+                
+                <h4 class="h6 mt-4">Current Vote Distribution</h4>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Candidate</th>
+                                <th>Votes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stat in candidate_stats %}
+                            <tr>
+                                <td>{{ stat.name }}</td>
+                                <td>{{ stat.votes }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="text-center mt-4">
+    <p class="text-muted">
+        <strong>Note:</strong> This information is restricted to admins only.
+        <br>
+        Regular users will not see results until voting is complete.
+    </p>
+</div>
+{% endblock %}
