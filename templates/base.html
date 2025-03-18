@@ -5,13 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#4361ee">
-    <title>Voting Application</title>
+    <title>AEI Voting Application</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/icon-192x192.png') }}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="Voting App">
+    <meta name="apple-mobile-web-app-title" content="AEI Voting App">
     <style>
         body {
             background-color: #f8f9fa;
@@ -94,7 +94,7 @@
 <body>
     <div class="container">
         <header class="text-center mb-4">
-            <h1 class="display-4">Voting Application</h1>
+            <h1 class="display-4">AEI Voting Application</h1>
             {% if session.admin_id %}
             <div class="mb-3">
                 <span>Admin: {{ session.admin_username }}</span>

@@ -1,6 +1,6 @@
 {
-    "name": "Voting Application",
-    "short_name": "Vote App",
+    "name": "AEI Voting Application",
+    "short_name": "AEI Vote App",
     "description": "A simple application for secure online voting",
     "start_url": "/",
     "display": "standalone",
