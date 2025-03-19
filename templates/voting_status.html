@@ -1,44 +1,63 @@
 <!-- templates/voting_status.html -->
 {% extends 'base.html' %}
 
-{% block content %}
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center">
-            <h2>Voting Status Dashboard</h2>
-            <div>
-                <a href="{{ url_for('manage_voting') }}" class="btn btn-success me-2">Manage Voting Time</a>
-                <a href="{{ url_for('results') }}" class="btn btn-primary me-2">See Results</a>
-                <a href="{{ url_for('admin_logout') }}" class="btn btn-outline-secondary">Logout</a>
-            </div>
+{% block hero %}
+<section class="hero">
+    <div class="container">
+        <div class="hero-content">
+            <h1>Voting Status Dashboard</h1>
+            <p>Monitor election participation, manage voting times, and view real-time statistics for the current election.</p>
         </div>
-        <p class="text-muted">Admin view of current voting status</p>
+    </div>
+</section>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-6">
+    <h2>Admin Control Panel</h2>
+    <div class="d-flex gap-4">
+        <a href="{{ url_for('manage_voting') }}" class="btn btn-success">
+            <i class="fas fa-clock me-2"></i>Manage Voting Time
+        </a>
+        <a href="{{ url_for('results') }}" class="btn btn-primary">
+            <i class="fas fa-chart-bar me-2"></i>View Results
+        </a>
+        <a href="{{ url_for('admin_logout') }}" class="btn btn-outline">
+            <i class="fas fa-sign-out-alt me-2"></i>Logout
+        </a>
     </div>
 </div>
 
-<div class="row mb-4">
+<div class="row mb-6">
     <div class="col-md-4">
         <div class="card h-100">
             <div class="card-header">
-                <h3 class="h5 mb-0">Participation Stats</h3>
+                <h3 class="mb-0">Participation Stats</h3>
             </div>
             <div class="card-body">
-                <div class="mb-3">
-                    <h4 class="h6">Total Registered Users</h4>
-                    <p class="display-6">{{ total_users }}</p>
+                <div class="mb-4">
+                    <h4 class="mb-2">Total Registered Users</h4>
+                    <p class="display-6 mb-0">{{ total_users }}</p>
                 </div>
-                <div class="mb-3">
-                    <h4 class="h6">Users Who Voted</h4>
-                    <p class="text-success display-6">{{ voted_users }}</p>
+                <div class="mb-4">
+                    <h4 class="mb-2">Users Who Voted</h4>
+                    <p class="display-6 mb-0 text-success">{{ voted_users }}</p>
                 </div>
-                <div class="mb-3">
-                    <h4 class="h6">Users Yet to Vote</h4>
-                    <p class="text-danger display-6">{{ pending_users }}</p>
+                <div class="mb-4">
+                    <h4 class="mb-2">Users Yet to Vote</h4>
+                    <p class="display-6 mb-0 text-danger">{{ pending_users }}</p>
                 </div>
                 
                 <div class="alert {% if voting_window.is_open() %}alert-success{% else %}alert-warning{% endif %} mt-4">
-                    <strong>Voting Status: {% if voting_window.is_open() %}OPEN{% else %}CLOSED{% endif %}</strong>
-                    <a href="{{ url_for('manage_voting') }}" class="btn btn-sm btn-outline-dark mt-2">Manage</a>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas {% if voting_window.is_open() %}fa-unlock{% else %}fa-lock{% endif %} me-2"></i>
+                            <strong>Voting Status: {% if voting_window.is_open() %}OPEN{% else %}CLOSED{% endif %}</strong>
+                        </div>
+                        <a href="{{ url_for('manage_voting') }}" class="btn btn-sm btn-outline">
+                            <i class="fas fa-cog me-2"></i>Manage
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -47,11 +66,11 @@
     <div class="col-md-8">
         <div class="card h-100">
             <div class="card-header">
-                <h3 class="h5 mb-0">Voting Progress</h3>
+                <h3 class="mb-0">Voting Progress</h3>
             </div>
             <div class="card-body">
                 <div class="mb-4">
-                    <h4 class="h6">Overall Participation Rate</h4>
+                    <h4 class="mb-2">Overall Participation Rate</h4>
                     <div class="progress" style="height: 30px;">
                         <div class="progress-bar" role="progressbar" 
                             style="width: {{ vote_percentage }}%;" 
@@ -63,20 +82,31 @@
                     </div>
                 </div>
                 
-                <h4 class="h6 mt-4">Current Vote Distribution</h4>
+                <h4 class="mb-4">Current Vote Distribution</h4>
                 <div class="table-responsive">
-                    <table class="table table-bordered">
+                    <table class="table">
                         <thead>
                             <tr>
                                 <th>Candidate</th>
-                                <th>Votes</th>
+                                <th class="text-end">Votes</th>
+                                <th>Distribution</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for stat in candidate_stats %}
                             <tr>
                                 <td>{{ stat.name }}</td>
-                                <td>{{ stat.votes }}</td>
+                                <td class="text-end">{{ stat.votes }}</td>
+                                <td>
+                                    <div class="progress">
+                                        <div class="progress-bar" role="progressbar" 
+                                            style="width: {{ (stat.votes / total_users * 100) if total_users > 0 else 0 }}%;" 
+                                            aria-valuenow="{{ stat.votes }}" 
+                                            aria-valuemin="0" 
+                                            aria-valuemax="{{ total_users }}">
+                                        </div>
+                                    </div>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -87,11 +117,36 @@
     </div>
 </div>
 
-<div class="text-center mt-4">
-    <p class="text-muted">
-        <strong>Note:</strong> This information is restricted to admins only.
-        <br>
-        Regular users will not see results until voting is complete.
-    </p>
+<div class="card mb-6">
+    <div class="card-body">
+        <div class="d-flex align-items-center gap-4 mb-4">
+            <div class="d-inline-block p-3 bg-primary-light rounded-circle">
+                <i class="fas fa-shield-alt fa-2x text-primary"></i>
+            </div>
+            <div>
+                <h3 class="mb-2">Administrator Controls</h3>
+                <p class="mb-0">Manage the election process and monitor results in real-time.</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h4>Quick Actions</h4>
+                <ul>
+                    <li>Use <strong>Manage Voting Time</strong> to set or adjust the voting window</li>
+                    <li>View <strong>Results</strong> at any time to see current standings</li>
+                    <li>Monitor participation rates to track voter engagement</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h4>Important Notes</h4>
+                <ul>
+                    <li>All administrator actions are logged for security</li>
+                    <li>Results are updated in real-time as votes are cast</li>
+                    <li>Consider sending reminders if participation is low</li>
+                </ul>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

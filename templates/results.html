@@ -1,27 +1,53 @@
 <!-- templates/results.html -->
 {% extends 'base.html' %}
 
+{% block hero %}
+<section class="hero">
+    <div class="container">
+        <div class="hero-content">
+            <h1>Election Results</h1>
+            <p>View the final tally of votes for each candidate. This page is only accessible to administrators until the election is complete.</p>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
 {% block content %}
-<div class="row mb-4">
-    <div class="col-12">
-        <h2 class="text-center mb-4">Voting Results</h2>
-        <p class="text-center">Total votes: {{ total_votes }}</p>
+<div class="d-flex justify-content-between align-items-center mb-6">
+    <div>
+        <h2>Vote Tally</h2>
+        <p>Total votes cast: <strong>{{ total_votes }}</strong></p>
+    </div>
+    <div class="d-flex gap-4">
+        <a href="{{ url_for('check_voting_status') }}" class="btn btn-outline">
+            <i class="fas fa-chart-line me-2"></i>Back to Dashboard
+        </a>
+        <a href="{{ url_for('manage_voting') }}" class="btn btn-primary">
+            <i class="fas fa-clock me-2"></i>Manage Voting Time
+        </a>
     </div>
 </div>
 
-<div class="row justify-content-center">
-    <div class="col-md-8">
+<div class="row mb-6">
+    <div class="col-lg-8 mx-auto">
         {% for candidate in candidates %}
-        <div class="card mb-3">
+        <div class="card mb-4">
             <div class="card-body">
-                <h3 class="h5">{{ candidate.name }}</h3>
-                <div class="d-flex justify-content-between mb-1">
-                    <span>{{ candidate.votes }} vote{% if candidate.votes != 1 %}s{% endif %}</span>
-                    <span>{{ "%.1f"|format(candidate.votes / total_votes * 100 if total_votes else 0) }}%</span>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h3 class="mb-0">{{ candidate.name }}</h3>
+                    <div class="text-end">
+                        <span class="h4 mb-0">{{ "%.1f"|format(candidate.votes / total_votes * 100 if total_votes else 0) }}%</span>
+                        <span class="text-muted ms-2">({{ candidate.votes }} vote{% if candidate.votes != 1 %}s{% endif %})</span>
+                    </div>
                 </div>
-                <div class="progress">
-                    <div class="progress-bar" role="progressbar" style="width: {{ candidate.votes / total_votes * 100 if total_votes else 0 }}%" 
-                        aria-valuenow="{{ candidate.votes }}" aria-valuemin="0" aria-valuemax="{{ total_votes }}"></div>
+                <p class="text-muted mb-3">{{ candidate.info }}</p>
+                <div class="progress" style="height: 15px;">
+                    <div class="progress-bar" role="progressbar" 
+                         style="width: {{ candidate.votes / total_votes * 100 if total_votes else 0 }}%;" 
+                         aria-valuenow="{{ candidate.votes }}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="{{ total_votes }}">
+                    </div>
                 </div>
             </div>
         </div>
@@ -29,7 +55,59 @@
     </div>
 </div>
 
-<div class="text-center mt-4">
-    <a href="{{ url_for('check_voting_status') }}" class="btn btn-outline-primary">Back to Voting Status</a>
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">Results Analysis</h3>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-4 mb-4">
+                    <div class="d-inline-block p-3 bg-primary-light rounded-circle">
+                        <i class="fas fa-chart-pie fa-2x text-primary"></i>
+                    </div>
+                    <p class="mb-0">Here's a summary of the election results and what they mean.</p>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h4>Key Findings</h4>
+                        <ul>
+                            {% if total_votes > 0 %}
+                                <li>Winner: <strong>{{ candidates[0].name }}</strong> with {{ "%.1f"|format(candidates[0].votes / total_votes * 100) }}% of the vote</li>
+                                <li>Margin of victory: {{ "%.1f"|format((candidates[0].votes - candidates[1].votes) / total_votes * 100) if candidates|length > 1 else "N/A" }}%</li>
+                                <li>Voter turnout: {{ "%.1f"|format(total_votes / (voted_users + pending_users) * 100) if (voted_users + pending_users) > 0 else 0 }}%</li>
+                            {% else %}
+                                <li>No votes have been cast yet</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h4>Next Steps</h4>
+                        <ul>
+                            {% if voting_window.is_open() %}
+                                <li>Voting is still open - results may change</li>
+                                <li>Consider closing voting when participation has reached desired levels</li>
+                            {% else %}
+                                <li>Voting is closed - results are final</li>
+                                <li>Prepare to announce the results to participants</li>
+                            {% endif %}
+                            <li>Export results for record-keeping if needed</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <div class="d-flex align-items-center gap-3">
+                        <i class="fas fa-lock fa-2x"></i>
+                        <div>
+                            <strong>Administrator Eyes Only</strong>
+                            <p class="mb-0">These results are only visible to administrators. Voters cannot see this information until the election is complete and results are officially released.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

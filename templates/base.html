@@ -5,122 +5,68 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#4361ee">
-    <title>AEI Voting Application</title>
+    <title>Voting Application</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/icon-192x192.png') }}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="AEI Voting App">
-    <style>
-        body {
-            background-color: #f8f9fa;
-            padding-top: 2rem;
-        }
-        .card {
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-        }
-        .form-container {
-            max-width: 500px;
-            margin: 0 auto;
-        }
-        .btn-primary {
-            background-color: #4361ee;
-        }
-        .admin-header {
-            background-color: #6c757d;
-            border-color: #4361ee;
-        }
-        .btn-primary:hover {
-            background-color: #3a56d4;
-            border-color: #3a56d4;
-        }
-        .card-header {
-            background-color: #4361ee;
-            color: white;
-            border-radius: 10px 10px 0 0 !important;
-        }
-        .progress {
-            height: 10px;
-            border-radius: 5px;
-        }
-        .progress-bar {
-            background-color: #4361ee;
-        }
-        .selected-vote {
-            border: 3px solid #4CC9F0;
-            box-shadow: 0 0 15px rgba(76, 201, 240, 0.5);
-        }
-        .voted-badge {
-            position: absolute;
-            top: -10px;
-            right: -10px;
-            background-color: #4CC9F0;
-            color: white;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transform: rotate(15deg);
-            font-weight: bold;
-        }
-        .confirmation-card {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-        /* Add these styles for better mobile experience */
-        @media (max-width: 576px) {
-            body {
-                padding-top: 1rem;
-            }
-            .container {
-                padding-left: 15px;
-                padding-right: 15px;
-            }
-            h1.display-4 {
-                font-size: 2.5rem;
-            }
-        }
-    </style>
+    <meta name="apple-mobile-web-app-title" content="Voting App">
+    
+    <!-- Modern UI Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modern-styles.css') }}">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <div class="container">
-        <header class="text-center mb-4">
-            <h1 class="display-4">AEI Voting Application</h1>
-            {% if session.admin_id %}
-            <div class="mb-3">
-                <span>Admin: {{ session.admin_username }}</span>
-                <a href="{{ url_for('admin_logout') }}" class="btn btn-sm btn-outline-secondary ms-2">Logout</a>
+    <!-- Header -->
+    <header class="app-header">
+        <div class="container">
+            <div class="header-content">
+                <a href="{{ url_for('index') }}" class="app-logo">
+                    <i class="fas fa-vote-yea me-2"></i>ElectVote
+                </a>
+                <div class="user-info">
+                    {% if session.admin_id %}
+                    <span>Admin: {{ session.admin_username }}</span>
+                    <a href="{{ url_for('admin_logout') }}" class="btn btn-sm btn-outline">Logout</a>
+                    {% elif session.user_id %}
+                    <span>Logged in as: {{ session.phone_number }}</span>
+                    <a href="{{ url_for('logout') }}" class="btn btn-sm btn-outline">Logout</a>
+                    {% endif %}
+                </div>
             </div>
-            {% elif session.user_id %}
-            <div class="mb-3">
-                <span>Logged in as: {{ session.phone_number }}</span>
-                <a href="{{ url_for('logout') }}" class="btn btn-sm btn-outline-secondary ms-2">Logout</a>
-            </div>
-            {% endif %}
-        </header>
-        
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        
+        </div>
+    </header>
+    
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="container mt-4">
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+    
+    <!-- Main Content -->
+    <main class="container">
+        {% block hero %}{% endblock %}
         {% block content %}{% endblock %}
-    </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="mt-4 py-4 text-center">
+        <div class="container">
+            <p class="mb-2">© {{ now.year }} ElectVote. Secure and transparent voting.</p>
+            <p class="mb-0 text-muted">Powered by modern technology for fair elections.</p>
+        </div>
+    </footer>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     
@@ -152,5 +98,8 @@
             addBtn.style.display = 'block';
         });
     </script>
+    
+    <!-- Extra scripts block for page-specific JavaScript -->
+    {% block extra_scripts %}{% endblock %}
 </body>
 </html>

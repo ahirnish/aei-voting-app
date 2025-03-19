@@ -1,74 +1,104 @@
 <!-- templates/manage_voting.html -->
 {% extends 'base.html' %}
 
-{% block content %}
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center">
-            <h2>Manage Voting Time Window</h2>
-            <div>
-                <a href="{{ url_for('check_voting_status') }}" class="btn btn-primary">Back to Dashboard</a>
-            </div>
+{% block hero %}
+<section class="hero">
+    <div class="container">
+        <div class="hero-content">
+            <h1>Manage Voting Time Window</h1>
+            <p>Set and control the timing for when voters can cast their ballots. Configure automatic opening and closing or manage voting status manually.</p>
         </div>
-        <p class="text-muted">Set the time period when voting is allowed</p>
     </div>
+</section>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-6">
+    <h2>Voting Schedule Controls</h2>
+    <a href="{{ url_for('check_voting_status') }}" class="btn btn-outline">
+        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+    </a>
 </div>
 
-<div class="row mb-4">
-    <div class="col-md-8 mx-auto">
+<div class="row mb-6">
+    <div class="col-lg-8 mx-auto">
         <div class="card">
             <div class="card-header">
-                <h3 class="h5 mb-0">Voting Window Settings</h3>
+                <h3 class="mb-0">Voting Window Settings</h3>
             </div>
             <div class="card-body">
                 <form action="{{ url_for('update_voting_window') }}" method="post">
-                    <div class="mb-3 form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if voting_window.is_active %}checked{% endif %}>
-                        <label class="form-check-label" for="is_active">
-                            Voting is {% if voting_window.is_active %}Open{% else %}Closed{% endif %}
-                        </label>
+                    <div class="mb-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if voting_window.is_active %}checked{% endif %}>
+                            <label class="form-check-label" for="is_active">
+                                <span class="ms-2 {% if voting_window.is_active %}text-success{% else %}text-danger{% endif %}">
+                                    Voting is {% if voting_window.is_active %}Open{% else %}Closed{% endif %}
+                                </span>
+                            </label>
+                        </div>
                     </div>
                     
-                    <div class="mb-3">
-                        <label for="start_time" class="form-label">Voting Start Time</label>
-                        <input type="datetime-local" class="form-control" id="start_time" name="start_time" value="{{ start_time }}">
-                        <small class="text-muted">When voting will open. Leave blank to use manual activation only.</small>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="end_time" class="form-label">Voting End Time</label>
-                        <input type="datetime-local" class="form-control" id="end_time" name="end_time" value="{{ end_time }}">
-                        <small class="text-muted">When voting will close. Leave blank to use manual deactivation only.</small>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-4">
+                                <label for="start_time" class="form-label">
+                                    <i class="fas fa-play-circle me-2"></i>Voting Start Time
+                                </label>
+                                <input type="datetime-local" class="form-control" id="start_time" name="start_time" value="{{ start_time }}">
+                                <small class="text-muted">Leave blank to use manual activation only.</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group mb-4">
+                                <label for="end_time" class="form-label">
+                                    <i class="fas fa-stop-circle me-2"></i>Voting End Time
+                                </label>
+                                <input type="datetime-local" class="form-control" id="end_time" name="end_time" value="{{ end_time }}">
+                                <small class="text-muted">Leave blank to use manual deactivation only.</small>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="alert {% if voting_window.is_open() %}alert-success{% else %}alert-warning{% endif %} mb-4">
-                        {% if voting_window.is_open() %}
-                            <strong>Voting is currently OPEN</strong>
-                            {% if voting_window.end_time %}
-                                <p class="mb-0">Voting will automatically close at {{ voting_window.end_time.strftime("%b %d, %Y at %I:%M %p") }}</p>
-                            {% else %}
-                                <p class="mb-0">No automatic end time set. You will need to close voting manually.</p>
-                            {% endif %}
-                        {% else %}
-                            <strong>Voting is currently CLOSED</strong>
-                            {% if voting_window.start_time and voting_window.is_active %}
-                                {% if voting_window.start_time > now %}
-                                    <p class="mb-0">Voting will automatically open at {{ voting_window.start_time.strftime("%b %d, %Y at %I:%M %p") }}</p>
+                        <div class="d-flex align-items-center gap-3">
+                            <i class="fas {% if voting_window.is_open() %}fa-check-circle{% else %}fa-exclamation-triangle{% endif %} fa-2x"></i>
+                            <div>
+                                <strong>{% if voting_window.is_open() %}Voting is currently OPEN{% else %}Voting is currently CLOSED{% endif %}</strong>
+                                {% if voting_window.is_open() %}
+                                    {% if voting_window.end_time %}
+                                        <p class="mb-0">Voting will automatically close at {{ voting_window.end_time.strftime("%b %d, %Y at %I:%M %p") }}</p>
+                                    {% else %}
+                                        <p class="mb-0">No automatic end time set. You will need to close voting manually.</p>
+                                    {% endif %}
                                 {% else %}
-                                    <p class="mb-0">Start time has passed but voting is closed. Check the "Voting is Open" switch to enable voting.</p>
+                                    {% if voting_window.start_time and voting_window.is_active %}
+                                        {% if voting_window.start_time > now %}
+                                            <p class="mb-0">Voting will automatically open at {{ voting_window.start_time.strftime("%b %d, %Y at %I:%M %p") }}</p>
+                                        {% else %}
+                                            <p class="mb-0">Start time has passed but voting is closed. Check the "Voting is Open" switch to enable voting.</p>
+                                        {% endif %}
+                                    {% endif %}
                                 {% endif %}
-                            {% endif %}
-                        {% endif %}
+                            </div>
+                        </div>
                     </div>
                     
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary">Save Settings</button>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Save Settings
+                        </button>
                     </div>
                 </form>
                 
                 <div class="d-flex justify-content-between mt-4">
-                    <a href="{{ url_for('open_voting') }}" class="btn btn-success">Open Voting Now</a>
-                    <a href="{{ url_for('close_voting') }}" class="btn btn-danger">Close Voting Now</a>
+                    <a href="{{ url_for('open_voting') }}" class="btn btn-success">
+                        <i class="fas fa-unlock me-2"></i>Open Voting Now
+                    </a>
+                    <a href="{{ url_for('close_voting') }}" class="btn btn-danger">
+                        <i class="fas fa-lock me-2"></i>Close Voting Now
+                    </a>
                 </div>
             </div>
         </div>
@@ -76,22 +106,45 @@
 </div>
 
 <div class="row">
-    <div class="col-md-8 mx-auto">
+    <div class="col-lg-8 mx-auto">
         <div class="card">
             <div class="card-header">
-                <h3 class="h5 mb-0">How Voting Window Works</h3>
+                <h3 class="mb-0">How Voting Window Works</h3>
             </div>
             <div class="card-body">
-                <ul>
-                    <li><strong>Manual Control:</strong> Use the "Open Voting Now" and "Close Voting Now" buttons for immediate control.</li>
-                    <li><strong>Scheduled Window:</strong> Set start and end times for automatic opening and closing.</li>
-                    <li><strong>Combined Control:</strong> You can use both methods together. The voting will be open when:
-                        <ul>
-                            <li>The "Voting is Open" switch is ON, AND</li>
-                            <li>The current time is between start and end times (if set)</li>
-                        </ul>
-                    </li>
-                </ul>
+                <div class="d-flex align-items-center gap-4 mb-4">
+                    <div class="d-inline-block p-3 bg-primary-light rounded-circle">
+                        <i class="fas fa-info-circle fa-2x text-primary"></i>
+                    </div>
+                    <p class="mb-0">The voting window controls determine when users can cast their votes. You have multiple ways to manage this process.</p>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h4><i class="fas fa-hand-point-up me-2"></i>Manual Control</h4>
+                                <p>Use the "Open Voting Now" and "Close Voting Now" buttons for immediate control.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h4><i class="fas fa-calendar-alt me-2"></i>Scheduled Window</h4>
+                                <p>Set start and end times for automatic opening and closing of the voting period.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h4><i class="fas fa-sliders-h me-2"></i>Combined Control</h4>
+                                <p>Use both methods together for maximum flexibility and control over the voting process.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
