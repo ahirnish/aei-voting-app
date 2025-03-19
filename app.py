@@ -2,21 +2,49 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
-import os, datetime
+import os, datetime, json
 import firebase_admin
 from firebase_admin import credentials, auth
 from werkzeug.security import generate_password_hash, check_password_hash
 
+
+# Read database credentials from environment variables
+DB_HOST = os.environ.get('DB_HOST')
+DB_PORT = os.environ.get('DB_PORT')
+DB_NAME = os.environ.get('DB_NAME')
+DB_USER = os.environ.get('DB_USER')
+DB_PASSWORD = os.environ.get('DB_PASSWORD')
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///voting.db'
+# Create connection string
+DB_URI = f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+# Use the connection string
+app.config['SQLALCHEMY_DATABASE_URI'] = DB_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+@app.context_processor
+def inject_now():
+    return {'now': datetime.datetime.now()}
+
+
+# Option 1: Use environment variable containing the entire JSON
+firebase_credentials_json = os.environ.get('FIREBASE_CREDENTIALS')
+if firebase_credentials_json:
+    # Parse the JSON string into a dictionary
+    cred_dict = json.loads(firebase_credentials_json)
+    cred = credentials.Certificate(cred_dict)
+    firebase_admin.initialize_app(cred)
+else:
+    # Fallback for local development
+    cred = credentials.Certificate('path/to/local/serviceAccountKey.json')
+    firebase_admin.initialize_app(cred)
+
 # Initialize Firebase Admin SDK (server-side)
 # Replace 'path/to/serviceAccountKey.json' with your actual path
-cred = credentials.Certificate('voting-app-aei-firebase-adminsdk-fbsvc-3c56a79e4c.json')
-firebase_admin.initialize_app(cred)
+# cred = credentials.Certificate('voting-app-aei-firebase-adminsdk-fbsvc-3c56a79e4c.json')
+# firebase_admin.initialize_app(cred)
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -24,7 +52,6 @@ class User(db.Model):
     firebase_uid = db.Column(db.String(128), unique=True, nullable=True)
     has_voted = db.Column(db.Boolean, default=False)
     voted_for = db.Column(db.Integer, db.ForeignKey('candidate.id'), nullable=True)
-    is_admin = db.Column(db.Boolean, default=False)
     
     def __repr__(self):
         return f'<User {self.phone_number}>'
@@ -144,6 +171,21 @@ def index():
 def login():
     return render_template('login.html')
 
+@app.route('/check_phone', methods=['POST'])
+def check_phone():
+    phone_number = request.json.get('phoneNumber')
+    
+    if not phone_number:
+        return jsonify({'success': False, 'message': 'Phone number is required'}), 400
+    
+    # Check if user exists in our database
+    user = User.query.filter_by(phone_number=phone_number).first()
+    
+    if user:
+        return jsonify({'success': True, 'exists': True})
+    else:
+        return jsonify({'success': True, 'exists': False, 'message': 'You are not a registered member.'})
+
 @app.route('/verify_token', methods=['POST'])
 def verify_token():
     id_token = request.json.get('idToken')
@@ -153,6 +195,7 @@ def verify_token():
         decoded_token = auth.verify_id_token(id_token)
         firebase_uid = decoded_token['uid']
         phone_number = decoded_token.get('phone_number')
+        print(f'phone_number: {phone_number}')
         
         if not phone_number:
             return jsonify({'success': False, 'message': 'No phone number found in token'}), 400
@@ -161,15 +204,12 @@ def verify_token():
         user = User.query.filter_by(phone_number=phone_number).first()
         
         if not user:
-            # Create new user
-            user = User(phone_number=phone_number, firebase_uid=firebase_uid)
-            db.session.add(user)
+            return jsonify({'success': False, 'message': 'You are not a registered member. Access denied.'}), 403
+        
+        # Update Firebase UID if it changed
+        if user.firebase_uid != firebase_uid:
+            user.firebase_uid = firebase_uid
             db.session.commit()
-        else:
-            # Update Firebase UID if it changed
-            if user.firebase_uid != firebase_uid:
-                user.firebase_uid = firebase_uid
-                db.session.commit()
         
         # Set session
         session['user_id'] = user.id
@@ -179,6 +219,7 @@ def verify_token():
     
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 401
+
 
 @app.route('/logout')
 def logout():
@@ -295,9 +336,21 @@ def admin_logout():
 @app.route('/results')
 @admin_required
 def results():
+    total_users = User.query.count()
+    voted_users = User.query.filter_by(has_voted=True).count()
+    pending_users = total_users - voted_users
+    
     candidates = Candidate.query.order_by(Candidate.votes.desc()).all()
     total_votes = sum(c.votes for c in candidates)
-    return render_template('results.html', candidates=candidates, total_votes=total_votes)
+    
+    voting_window = VotingWindow.query.first()
+    
+    return render_template('results.html', 
+                         candidates=candidates, 
+                         total_votes=total_votes,
+                         voted_users=voted_users,
+                         pending_users=pending_users,
+                         voting_window=voting_window)
 
 # Add these routes to app.py
 
@@ -344,6 +397,7 @@ def update_voting_window():
 def open_voting():
     voting_window = VotingWindow.query.first()
     voting_window.is_active = True
+    voting_window.end_time = None
     db.session.commit()
     
     flash('Voting is now open', 'success')
@@ -374,18 +428,3 @@ def service_worker():
 if __name__ == '__main__':
     # app.run(debug=True)
     app.run(host='0.0.0.0', port=5000, debug=False)
-
-
-'''
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyA4sOXJCedfA7ugRT6OAylgr0YNmj9JqVI",
-    authDomain: "voting-app-aei.firebaseapp.com",
-    projectId: "voting-app-aei",
-    storageBucket: "voting-app-aei.firebasestorage.app",
-    messagingSenderId: "285948156252",
-    appId: "1:285948156252:web:dffd67dcb089499ee08999",
-    measurementId: "G-8GHW9FP8Q3"
-  };
-
-'''

@@ -1,60 +1,181 @@
-<!-- templates/candidates.html -->
+<!-- After the candidates grid, add a single modal for all candidates -->
+<div class="modal fade" id="voteConfirmationModal" tabindex="-1" aria-labelledby="voteConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="voteConfirmationModalLabel">Confirm Your Vote</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-exclamation-circle fa-3x text-warning"></i>
+                </div>
+                <p>You are about to vote for <strong id="candidateName"></strong>.</p>
+                <p class="alert alert-warning">
+                    <i class="fas fa-info-circle me-2"></i>
+                    This action cannot be undone. Once your vote is submitted, you cannot change it.
+                </p>
+                <p>Are you sure you want to proceed?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </button>
+                <form id="voteForm" method="post">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-check me-2"></i>Confirm Vote
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div><!-- templates/candidates.html -->
 {% extends 'base.html' %}
 
-{% block content %}
-<div class="row mb-4">
-    <div class="col-12">
-        <h2 class="text-center mb-4">Cast Your Vote</h2>
-        
-        {% if has_voted %}
-            <div class="alert alert-info text-center">
-                You have already voted. Your selection is highlighted below.
-            </div>
-        {% elif not voting_open %}
-            <div class="alert alert-warning text-center">
-                <h4>Voting is currently closed</h4>
-                <p>
-                    Voting window: {{ start_time }} to {{ end_time }}<br>
-                    Please return during the scheduled voting period.
-                </p>
-            </div>
-        {% else %}
-            <div class="alert alert-success text-center">
-                <strong>Voting is open!</strong> Please select a candidate to vote for.
-            </div>
-        {% endif %}
+{% block hero %}
+<section class="hero">
+    <div class="container">
+        <div class="hero-content">
+            <h1>Cast Your Vote</h1>
+            <p>Review the candidates below and select the one you believe will best represent your interests. Your vote matters in shaping our collective future.</p>
+        </div>
     </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Wait for document to be fully loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Store candidates data for the modal
+        const candidatesData = {
+            {% for candidate in candidates %}
+            {{ candidate.id }}: {
+                name: "{{ candidate.name }}",
+                voteUrl: "{{ url_for('vote', candidate_id=candidate.id) }}"
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        };
+        
+        // Get modal elements
+        const modal = document.getElementById('voteConfirmationModal');
+        const modalInstance = new bootstrap.Modal(modal);
+        const candidateName = document.getElementById('candidateName');
+        const voteForm = document.getElementById('voteForm');
+        
+        // Add event listener to all vote buttons
+        const voteButtons = document.querySelectorAll('.vote-button');
+        voteButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                // Prevent any default or bubbling behavior
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Get candidate ID from data attribute
+                const candidateId = this.getAttribute('data-candidate-id');
+                
+                // Update modal with candidate info
+                candidateName.textContent = candidatesData[candidateId].name;
+                voteForm.action = candidatesData[candidateId].voteUrl;
+                
+                // Show modal
+                modalInstance.show();
+            });
+        });
+        
+        // Prevent modal from showing on its own
+        modal.addEventListener('show.bs.modal', function(event) {
+            // If not triggered by our code, prevent it
+            if (event.relatedTarget) {
+                event.preventDefault();
+            }
+        });
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    {% if has_voted %}
+        <div class="alert alert-info">
+            <div class="d-flex align-items-center gap-4">
+                <i class="fas fa-check-circle fa-2x"></i>
+                <div>
+                    <h3 class="mb-2">Thank you for voting!</h3>
+                    <p class="mb-0">Your vote has been recorded. Your selection is highlighted below.</p>
+                </div>
+            </div>
+        </div>
+    {% elif not voting_open %}
+        <div class="alert alert-warning">
+            <div class="d-flex align-items-center gap-4">
+                <i class="fas fa-clock fa-2x"></i>
+                <div>
+                    <h3 class="mb-2">Voting is currently closed</h3>
+                    <p class="mb-0">
+                        Voting window: {{ start_time }} to {{ end_time }}<br>
+                        Please return during the scheduled voting period.
+                    </p>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-success">
+            <div class="d-flex align-items-center gap-4">
+                <i class="fas fa-vote-yea fa-2x"></i>
+                <div>
+                    <h3 class="mb-2">Voting is open!</h3>
+                    <p class="mb-0">Please review the candidates and make your selection.</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 </div>
 
-<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+<h2 class="mb-4">Meet the Candidates</h2>
+
+<div class="candidates-grid">
     {% for candidate in candidates %}
-    <div class="col">
-        <div class="card h-100 position-relative {% if selected_candidate == candidate.id %}selected-vote{% endif %}">
-            {% if selected_candidate == candidate.id %}
-            <div class="voted-badge">
-                <i class="bi bi-check"></i> ✓
-            </div>
+    <div class="card candidate-card {% if selected_candidate == candidate.id %}selected-vote{% endif %}">
+        {% if selected_candidate == candidate.id %}
+        <div class="voted-badge">
+            <i class="fas fa-check"></i>
+        </div>
+        {% endif %}
+        
+        <div class="card-header">
+            <h3 class="candidate-name mb-0">{{ candidate.name }}</h3>
+        </div>
+        
+        <div class="card-body">
+            <div class="candidate-info">{{ candidate.info }}</div>
+            
+            {% if not has_voted and voting_open %}
+            <button type="button" class="btn btn-primary w-100 vote-button" data-candidate-id="{{ candidate.id }}">
+                <i class="fas fa-vote-yea me-2"></i>Vote
+            </button>
+            
+            <!-- Vote Confirmation Modal (moved outside the loop) -->
+            {% elif not has_voted %}
+            <button type="button" class="btn btn-secondary w-100" disabled>
+                <i class="fas fa-lock me-2"></i>Voting Closed
+            </button>
             {% endif %}
-            <div class="card-header text-center">
-                <h3 class="h5 mb-0">{{ candidate.name }}</h3>
-            </div>
-            <div class="card-body">
-                <p class="card-text">{{ candidate.info }}</p>
-                {% if not has_voted and voting_open %}
-                <form action="{{ url_for('vote', candidate_id=candidate.id) }}" method="post">
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary">Vote</button>
-                    </div>
-                </form>
-                {% elif not has_voted %}
-                <div class="d-grid gap-2">
-                    <button type="button" class="btn btn-secondary" disabled>Voting Closed</button>
-                </div>
-                {% endif %}
-            </div>
         </div>
     </div>
     {% endfor %}
 </div>
 
+<div class="card mb-6">
+    <div class="card-body">
+        <h3>What happens after voting?</h3>
+        <p>After all votes have been cast:</p>
+        <ul>
+            <li>Results will be tallied and verified</li>
+            <li>The winner will be announced by the administrator</li>
+            <li>Your privacy is maintained - individual votes remain confidential</li>
+        </ul>
+        <p class="mb-0">Thank you for participating in this important decision-making process.</p>
+    </div>
+</div>
 {% endblock %}
