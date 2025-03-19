@@ -1,3 +1,6 @@
 venv_voting_app
 __pycache__
 .env
+firebase_admin_sdk.json
+*.db
+*.csv
